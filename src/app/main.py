@@ -1,6 +1,6 @@
-
-
 from typing import List
+
+from .schemas.api import ProductSageResponse
 from .product_sage.improvement import ProductImprovement, ProductImprovementSchema, ProductImprovements
 from .schemas.product_sage import Specifications
 from .product_sage.translation import Translation, TranslationSchema
@@ -12,12 +12,18 @@ from dibkb_scraper import AmazonScraper,AmazonProductResponse
 from .product_sage.main import ProductSage
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
+import socketio
+
+sio = socketio.AsyncServer(async_mode="asgi")
 
 app = FastAPI(
     title="Excel Backend",
     description="Excel Backend",
     version="1.0.0"
 )
+
+sio_app = socketio.ASGIApp(sio, app)
+
 
 # Configure CORS
 app.add_middleware(
@@ -27,6 +33,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
 
 @app.get("/health")
 async def health_check():
@@ -43,8 +51,8 @@ async def get_amazon_review(image_id: str):
     review = get_review(image_id)
     return review
 
-@app.get("/amazon/product-sage/{asin}",response_model=List[ProductImprovementSchema])
-async def get_amazon_product_sage(asin: str)->List[ProductImprovementSchema]:
+@app.get("/amazon/product-sage/{asin}",response_model=ProductSageResponse)
+async def get_amazon_product_sage(asin: str)->ProductSageResponse:
     
     scraper = AmazonScraper(asin)
     product_detials = scraper.get_all_details()
@@ -54,9 +62,13 @@ async def get_amazon_product_sage(asin: str)->List[ProductImprovementSchema]:
     
 
     product_sage = ProductSage(product_info, reviews)
+    sentiments = product_sage.get_analysis()
     improvements = product_sage.get_product_improvement()
     
-    return improvements
+    return ProductSageResponse(
+        improvements=improvements,
+        sentiments=sentiments
+    )
 
 
 @app.get("/amazon/competitors/{asin}")
@@ -66,3 +78,13 @@ async def get_amazon_competitors(asin: str):
     competitors = scraper.get_competitors()
     return competitors
 
+# socketio events
+
+@sio.event
+async def connect(sid, environ):
+    print("Client connected:", sid)
+    await sio.emit("welcome", {"message": "Welcome to the FastAPI Socket.IO server!"}, room=sid)
+
+@sio.event
+async def disconnect(sid):
+    print("Client disconnected:", sid)
