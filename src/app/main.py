@@ -9,7 +9,7 @@ from .image.main import get_review
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dibkb_scraper import AmazonScraper,AmazonProductResponse
-from .product_sage.main import ReActOrchestrator
+from .product_sage.main import ProductSage
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
@@ -45,28 +45,24 @@ async def get_amazon_review(image_id: str):
 
 @app.get("/amazon/product-sage/{asin}",response_model=List[ProductImprovementSchema])
 async def get_amazon_product_sage(asin: str)->List[ProductImprovementSchema]:
-
+    
     scraper = AmazonScraper(asin)
-    translator = Translation()
     product_detials = scraper.get_all_details()
+
     product_info: Specifications = product_detials.product.specifications
-    reviews = product_detials.product.reviews
+    reviews: List[str] = product_detials.product.reviews
     
 
-    with ThreadPoolExecutor() as executor:
-        translated_reviews = list(executor.map(translator.translate, reviews))
-
-    sentiment_analysis = SentimentAnalysis()
-    with ThreadPoolExecutor() as executor:
-        sentiment_analysis_results = list(
-            executor.map(
-                sentiment_analysis.analyze,
-                [review.translation for review in translated_reviews]
-            )
-        )
-
-    product_improvement = ProductImprovement()
-    improvements = product_improvement.generate_improvements(product_info, sentiment_analysis_results)
-    
+    product_sage = ProductSage(product_info, reviews)
+    improvements = product_sage.get_product_improvement()
     
     return improvements
+
+
+@app.get("/amazon/competitors/{asin}")
+async def get_amazon_competitors(asin: str):
+    scraper = AmazonScraper(asin)
+    html = scraper.get_html()
+    competitors = scraper.get_competitors()
+    return competitors
+

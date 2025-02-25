@@ -447,14 +447,14 @@ files = [
 
 [[package]]
 name = "dibkb-scraper"
-version = "0.2.4"
+version = "0.2.5"
 description = "A scraper for Amazon product details and reviews using ASIN"
 optional = false
 python-versions = ">=3.6"
 groups = ["main"]
 files = [
-    {file = "dibkb_scraper-0.2.4-py3-none-any.whl", hash = "sha256:2274d7331b749fbcf1341798822a68a097712eb3bb836caf23d1db54bce974da"},
-    {file = "dibkb_scraper-0.2.4.tar.gz", hash = "sha256:bbd60043e6e77960448238d36b2a4d23f5a7e3e66085acb0bc2027b249b211e9"},
+    {file = "dibkb_scraper-0.2.5-py3-none-any.whl", hash = "sha256:723670c7fdb86c95bfe1f4962bfdbc24b5be66046eac109ffc5a1417b1063bdf"},
+    {file = "dibkb_scraper-0.2.5.tar.gz", hash = "sha256:701cc46fcab131aa9b859e8d850c6c03ba63f05ceb2ad16cb649f0fecdb1139f"},
 ]
 
 [package.dependencies]
@@ -2377,4 +2377,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0.0"
-content-hash = "54b4cc223ab6b1a3474406cb5a1ca19229ace61296ef6a0090a2e4dc28751c01"
+content-hash = "66acfe4566ba508c281e071bf9f3fb599138bcdc88ffcb94e383f08db2e759cf"
