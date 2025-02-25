@@ -73,8 +73,8 @@ class ProductImprovement:
                 analysis=formatted_analysis
             )
             response = self.llm.invoke(formatted_prompt)
-            parsed_response = self.parser.parse(response.content)
-            return parsed_response
+            parsed_response: ProductImprovements = self.parser.parse(response.content)
+            return parsed_response.improvements
         
         except Exception as e:
             raise ValueError(f"Failed to generate improvements: {str(e)}")

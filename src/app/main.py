@@ -1,5 +1,6 @@
 
 
+from typing import List
 from .product_sage.improvement import ProductImprovement, ProductImprovementSchema, ProductImprovements
 from .schemas.product_sage import Specifications
 from .product_sage.translation import Translation, TranslationSchema
@@ -42,8 +43,8 @@ async def get_amazon_review(image_id: str):
     review = get_review(image_id)
     return review
 
-@app.get("/amazon/product-sage/{asin}",response_model=ProductImprovements)
-async def get_amazon_product_sage(asin: str)->ProductImprovements:
+@app.get("/amazon/product-sage/{asin}",response_model=List[ProductImprovementSchema])
+async def get_amazon_product_sage(asin: str)->List[ProductImprovementSchema]:
 
     scraper = AmazonScraper(asin)
     translator = Translation()
