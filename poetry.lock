@@ -459,14 +459,14 @@ files = [
 
 [[package]]
 name = "dibkb-scraper"
-version = "0.2.5"
+version = "0.2.7"
 description = "A scraper for Amazon product details and reviews using ASIN"
 optional = false
 python-versions = ">=3.6"
 groups = ["main"]
 files = [
-    {file = "dibkb_scraper-0.2.5-py3-none-any.whl", hash = "sha256:723670c7fdb86c95bfe1f4962bfdbc24b5be66046eac109ffc5a1417b1063bdf"},
-    {file = "dibkb_scraper-0.2.5.tar.gz", hash = "sha256:701cc46fcab131aa9b859e8d850c6c03ba63f05ceb2ad16cb649f0fecdb1139f"},
+    {file = "dibkb_scraper-0.2.7-py3-none-any.whl", hash = "sha256:6fce52f6a7e652d117e5d440e1a6719bfee74a0bfc3a0af4c58e73f12b8324b6"},
+    {file = "dibkb_scraper-0.2.7.tar.gz", hash = "sha256:0791aeb95db1ef62de328f3fe0efca29d059a60929c3bbdd0040610ef17b2234"},
 ]
 
 [package.dependencies]
@@ -1538,6 +1538,26 @@ files = [
 ]
 
 [[package]]
+name = "psycopg2"
+version = "2.9.10"
+description = "psycopg2 - Python-PostgreSQL Database Adapter"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "psycopg2-2.9.10-cp310-cp310-win32.whl", hash = "sha256:5df2b672140f95adb453af93a7d669d7a7bf0a56bcd26f1502329166f4a61716"},
+    {file = "psycopg2-2.9.10-cp310-cp310-win_amd64.whl", hash = "sha256:c6f7b8561225f9e711a9c47087388a97fdc948211c10a4bccbf0ba68ab7b3b5a"},
+    {file = "psycopg2-2.9.10-cp311-cp311-win32.whl", hash = "sha256:47c4f9875125344f4c2b870e41b6aad585901318068acd01de93f3677a6522c2"},
+    {file = "psycopg2-2.9.10-cp311-cp311-win_amd64.whl", hash = "sha256:0435034157049f6846e95103bd8f5a668788dd913a7c30162ca9503fdf542cb4"},
+    {file = "psycopg2-2.9.10-cp312-cp312-win32.whl", hash = "sha256:65a63d7ab0e067e2cdb3cf266de39663203d38d6a8ed97f5ca0cb315c73fe067"},
+    {file = "psycopg2-2.9.10-cp312-cp312-win_amd64.whl", hash = "sha256:4a579d6243da40a7b3182e0430493dbd55950c493d8c68f4eec0b302f6bbf20e"},
+    {file = "psycopg2-2.9.10-cp313-cp313-win_amd64.whl", hash = "sha256:91fd603a2155da8d0cfcdbf8ab24a2d54bca72795b90d2a3ed2b6da8d979dee2"},
+    {file = "psycopg2-2.9.10-cp39-cp39-win32.whl", hash = "sha256:9d5b3b94b79a844a986d029eee38998232451119ad653aea42bb9220a8c5066b"},
+    {file = "psycopg2-2.9.10-cp39-cp39-win_amd64.whl", hash = "sha256:88138c8dedcbfa96408023ea2b0c369eda40fe5d75002c0964c78f46f11fa442"},
+    {file = "psycopg2-2.9.10.tar.gz", hash = "sha256:12ec0b40b0273f95296233e8750441339298e6a572f7039da5b260e3c8b60e11"},
+]
+
+[[package]]
 name = "pycparser"
 version = "2.22"
 description = "C parser in Python"
@@ -2464,4 +2484,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0.0"
-content-hash = "6bda8727ca3fbd958b7bacbfa0ff9588f547afce4e49e4caf4746a8073836364"
+content-hash = "220214b03e0f217acbe6059f8bf3c27b3ab9a119e593a1d6e63845879f915171"

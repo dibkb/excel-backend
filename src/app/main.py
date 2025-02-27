@@ -1,17 +1,15 @@
-from typing import List
+from typing import Any, Dict, List
+
+from .database.read.main import asin_exists, asin_exists_sage, fetch_product_by_asin, fetch_product_sage_by_asin
+from .database.create.main import create_product, create_product_sage
+from .database.init_db import init_db
 
 from .schemas.api import ProductSageResponse
-from .product_sage.improvement import ProductImprovement, ProductImprovementSchema, ProductImprovements
 from .schemas.product_sage import Specifications
-from .product_sage.translation import Translation, TranslationSchema
-from .product_sage.sentiment import SentimentAnalysis
-from .image.main import get_review
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dibkb_scraper import AmazonScraper,AmazonProductResponse
 from .product_sage.main import ProductSage
-from concurrent.futures import ThreadPoolExecutor
-from functools import partial
 import socketio
 
 sio = socketio.AsyncServer(async_mode="asgi")
@@ -22,53 +20,60 @@ app = FastAPI(
     version="1.0.0"
 )
 
-sio_app = socketio.ASGIApp(sio, app)
-
-
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3001"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+sio_app = socketio.ASGIApp(sio, app)
 
 
+@app.on_event("startup")
+async def startup_db_client():
+    try:
+        init_db()
+    except Exception as e:
+        print(f"Failed to initialize database: {e}")
+        
 @app.get("/health")
 async def health_check():
     return {"status": "Healthy and running 🚀 💪"}
 
-@app.get("/amazon/{asin}",response_model=AmazonProductResponse)
-async def get_amazon_product(asin: str):
-    scraper = AmazonScraper(asin)
-    product = scraper.get_all_details()
-    return product
+@app.get("/amazon/{asin}",response_model=Dict[str,Any])
+async def get_amazon_product(asin: str)->Dict[str,Any]:
+    if not asin_exists(asin):
+        scraper = AmazonScraper(asin)
+        product = scraper.get_all_details()
+        response = create_product(product.product,asin)
+        return response
+    else:
+        product = fetch_product_by_asin(asin)
+        return product
 
-@app.get("/amazon/review/{image_id}")
-async def get_amazon_review(image_id: str):
-    review = get_review(image_id)
-    return review
+@app.get("/amazon/product-sage/{asin}",response_model=Dict[str,Any])
+async def get_amazon_product_sage(asin: str)->Dict[str,Any]:
+    if not asin_exists_sage(asin):
+        scraper = AmazonScraper(asin)
+        product_detials = scraper.get_all_details()
 
-@app.get("/amazon/product-sage/{asin}",response_model=ProductSageResponse)
-async def get_amazon_product_sage(asin: str)->ProductSageResponse:
+        product_info: Specifications = product_detials.product.specifications
+        reviews: List[str] = product_detials.product.reviews
     
-    scraper = AmazonScraper(asin)
-    product_detials = scraper.get_all_details()
 
-    product_info: Specifications = product_detials.product.specifications
-    reviews: List[str] = product_detials.product.reviews
-    
-
-    product_sage = ProductSage(product_info, reviews)
-    sentiments = product_sage.get_analysis()
-    improvements = product_sage.get_product_improvement()
-    
-    return ProductSageResponse(
-        improvements=improvements,
-        sentiments=sentiments
-    )
+        product_sage = ProductSage(product_info, reviews)
+        sentiments = product_sage.get_analysis()
+        improvements = product_sage.get_product_improvement()
+        print(improvements)
+        print(sentiments)
+        response = create_product_sage(improvements,sentiments,asin)
+        return response
+    else:
+        product = fetch_product_sage_by_asin(asin)
+        return product
 
 
 @app.get("/amazon/competitors/{asin}")
