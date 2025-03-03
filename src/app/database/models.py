@@ -1,5 +1,6 @@
 from .init_db import Base
-from sqlalchemy import Column, String, Text, DECIMAL,JSON
+from sqlalchemy import Column, String, Text, DECIMAL,JSON,DateTime
+from datetime import datetime
 
 class Product(Base):
     __tablename__ = 'products'
@@ -19,3 +20,9 @@ class ProductSage(Base):
     asin = Column(String(20), primary_key=True)
     improvements = Column(JSON,nullable=True)
     sentiments = Column(JSON,nullable=True)
+
+class ProductEnhancements(Base):
+    __tablename__ = 'product_enhancements'
+    asin = Column(String(20), primary_key=True)
+    enhancements = Column(JSON,nullable=True)
+    created_at = Column(DateTime, default=datetime.now())

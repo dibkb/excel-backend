@@ -1,6 +1,7 @@
+from datetime import datetime
 from ..init_db import get_db
 from sqlalchemy.dialects.postgresql import insert
-from ..models import Product, ProductSage
+from ..models import Product, ProductEnhancements, ProductSage
 from ..main import engine, SessionLocal
 from ...schemas.product import Product as ProductSchema
 import json
@@ -36,6 +37,30 @@ def create_product(product_data, asin: str):
         db.execute(query)
         db.commit()
         return values
+    except Exception as e:
+        db.rollback()
+        print(f"Error creating product: {e}")
+        raise
+    finally:
+        db.close()
+
+def create_product_enhancements(json_data, asin: str):
+    db = SessionLocal()
+    try:
+        # Ensure product_data is a dictionary or a Pydantic model
+
+        # Create the values dictionary for the insert
+        values = {
+            "asin": asin,
+            "enhancements": json_data,
+            "created_at": datetime.now()
+        }
+        
+        query = insert(ProductEnhancements).values(**values)
+        db.execute(query)
+        db.commit()
+        return values
+    
     except Exception as e:
         db.rollback()
         print(f"Error creating product: {e}")

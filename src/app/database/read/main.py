@@ -1,5 +1,5 @@
 from ..init_db import get_db
-from ..models import Product,ProductSage
+from ..models import Product, ProductEnhancements,ProductSage
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import exists
 
@@ -24,4 +24,15 @@ def fetch_product_sage_by_asin(asin: str = None) -> dict:
         query = db.query(ProductSage)
         if asin:
             query = query.filter(ProductSage.asin == asin).first()
+        return jsonable_encoder(query)
+    
+def product_enhancements_exists(asin: str) -> bool:
+    with get_db() as db:
+        return db.query(exists().where(ProductEnhancements.asin == asin)).scalar()
+
+def fetch_product_enhancements_by_asin(asin: str = None) -> dict:
+    with get_db() as db:
+        query = db.query(ProductEnhancements)
+        if asin:
+            query = query.filter(ProductEnhancements.asin == asin).first()
         return jsonable_encoder(query)

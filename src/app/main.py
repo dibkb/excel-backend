@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
-
-from .database.read.main import asin_exists, asin_exists_sage, fetch_product_by_asin, fetch_product_sage_by_asin
-from .database.create.main import create_product, create_product_sage
+import httpx
+from .database.read.main import asin_exists, asin_exists_sage, fetch_product_by_asin, fetch_product_enhancements_by_asin, fetch_product_sage_by_asin, product_enhancements_exists
+from .database.create.main import create_product, create_product_enhancements, create_product_sage
 from .database.init_db import init_db
 
 from .schemas.api import ProductSageResponse
@@ -11,8 +11,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from dibkb_scraper import AmazonScraper,AmazonProductResponse
 from .product_sage.main import ProductSage
 import socketio
+from .product_enhancer.enhance import ProductEnhancer
 
-sio = socketio.AsyncServer(async_mode="asgi")
+sio = socketio.AsyncServer(
+    async_mode="asgi",
+    cors_allowed_origins=["http://localhost:3001", "http://localhost:3000", "http://localhost:5173"],
+    logger=True,
+    engineio_logger=True
+)
 
 app = FastAPI(
     title="Excel Backend",
@@ -23,7 +29,7 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3001"],
+    allow_origins=["http://localhost:3001", "http://localhost:3000", "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -38,6 +44,16 @@ async def startup_db_client():
         init_db()
     except Exception as e:
         print(f"Failed to initialize database: {e}")
+
+# socket io events
+@sio.event
+async def connect(sid, environ):
+    print("Client connected:", sid)
+    await sio.emit("welcome", {"message": "Welcome to the FastAPI Socket.IO server!"}, room=sid)
+
+@sio.event
+async def disconnect(sid):
+    print("Client disconnected:", sid)
         
 @app.get("/health")
 async def health_check():
@@ -79,17 +95,31 @@ async def get_amazon_product_sage(asin: str)->Dict[str,Any]:
 @app.get("/amazon/competitors/{asin}")
 async def get_amazon_competitors(asin: str):
     scraper = AmazonScraper(asin)
-    html = scraper.get_html()
     competitors = scraper.get_competitors()
     return competitors
 
-# socketio events
+@app.get("/amazon/product-enhancements/{asin}")
+async def get_amazon_competitors(asin: str):
+    if not product_enhancements_exists(asin):
+        try:
+            client = httpx.AsyncClient()
+            response = await client.get(f"http://localhost:8000/amazon/{asin}")
+            product = response.json()
+            product_enhancer = ProductEnhancer(product)
+            content = product_enhancer.generate_enhanced_listing()
+            response = create_product_enhancements(content,asin)
 
-@sio.event
-async def connect(sid, environ):
-    print("Client connected:", sid)
-    await sio.emit("welcome", {"message": "Welcome to the FastAPI Socket.IO server!"}, room=sid)
+            return {
+                "asin": asin,
+                "enhancements": content
+            }
+        
+        except Exception as e:
+            print(f"Error generating product enhancements: {e}")
+            return {"error": "Failed to generate product enhancements"}
+        finally:
+            await client.aclose()
 
-@sio.event
-async def disconnect(sid):
-    print("Client disconnected:", sid)
+    else:
+        product = fetch_product_enhancements_by_asin(asin)
+        return product
