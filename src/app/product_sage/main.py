@@ -54,7 +54,7 @@ class ProductSage:
     def get_analysis(self) -> List[SentimentSchema]:
         return self.analyze_sentiment()
     
-    def get_product_improvement(self) -> List[ProductImprovementSchema]:
+    def get_product_improvement(self):
         self.analyze_sentiment() 
         return self.product_improvement.generate_improvements(
             self.product_info, 

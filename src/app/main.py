@@ -1,4 +1,9 @@
 from typing import Any, Dict, List
+
+from .product_sage.web_reviewer import WebReviewer
+
+from .product_sage.sentiment import SentimentSchema
+from .product_sage.improvement import ProductImprovementSchema
 import httpx
 from .database.read.main import asin_exists, asin_exists_sage, fetch_product_by_asin, fetch_product_enhancements_by_asin, fetch_product_sage_by_asin, product_enhancements_exists
 from .database.create.main import create_product, create_product_enhancements, create_product_sage
@@ -70,23 +75,26 @@ async def get_amazon_product(asin: str)->Dict[str,Any]:
         product = fetch_product_by_asin(asin)
         return product
 
-@app.get("/amazon/product-sage/{asin}",response_model=Dict[str,Any])
-async def get_amazon_product_sage(asin: str)->Dict[str,Any]:
+@app.get("/amazon/product-sage/{asin}",response_model=Any)
+async def get_amazon_product_sage(asin: str)->Any:
     if not asin_exists_sage(asin):
         scraper = AmazonScraper(asin)
         product_detials = scraper.get_all_details()
 
-        product_info: Specifications = product_detials.product.specifications
-        reviews: List[str] = product_detials.product.reviews
+        # product_info: Specifications = product_detials.product.specifications
+        # reviews: List[str] = product_detials.product.reviews
     
 
-        product_sage = ProductSage(product_info, reviews)
-        sentiments = product_sage.get_analysis()
-        improvements = product_sage.get_product_improvement()
-        print(improvements)
-        print(sentiments)
-        response = create_product_sage(improvements,sentiments,asin)
-        return response
+        # product_sage = ProductSage(product_info, reviews)
+        # sentiments = product_sage.get_analysis()
+        # improvements = product_sage.get_product_improvement()
+
+        # response = create_product_sage(improvements,sentiments,asin)
+
+        # return response
+        title_refiner = WebReviewer(product_detials.product.title)
+        refined_title = title_refiner.get_top_website_content()
+        return refined_title
     else:
         product = fetch_product_sage_by_asin(asin)
         return product

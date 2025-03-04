@@ -21,7 +21,7 @@ class ProductImprovement:
     def __init__(self):
         self.llm = ChatOpenAI(
             temperature=0.1,
-            model="gpt-4-turbo-preview",
+            model="gpt-4o-mini",
             model_kwargs={"response_format": {"type": "json_object"}}
         )
         self.parser = PydanticOutputParser(pydantic_object=ProductImprovements)

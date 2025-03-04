@@ -9,7 +9,7 @@ class TranslationSchema(BaseModel):
 
 class Translation():
     def __init__(self):
-        self.llm = ChatOpenAI(temperature=0.3, model="gpt-4-0125-preview")
+        self.llm = ChatOpenAI(temperature=0.3, model="gpt-4o-mini")
         self.parser = PydanticOutputParser(pydantic_object=TranslationSchema)
         self.prompt = PromptTemplate(
             template="""You are a language detection and translation expert. Analyze the following text:

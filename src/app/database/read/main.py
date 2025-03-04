@@ -2,11 +2,22 @@ from ..init_db import get_db
 from ..models import Product, ProductEnhancements,ProductSage
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import exists
+from sqlalchemy.exc import OperationalError
+from time import sleep
 
 
-def asin_exists(asin: str) -> bool:
-    with get_db() as db:
-        return db.query(exists().where(Product.asin == asin)).scalar()
+def asin_exists(asin: str, max_retries: int = 3) -> bool:
+    for attempt in range(max_retries):
+        try:
+            with get_db() as db:
+                return db.query(exists().where(Product.asin == asin)).scalar()
+        except OperationalError as e:
+            if "SSL SYSCALL error: EOF detected" in str(e):
+                if attempt == max_retries - 1:
+                    raise
+                sleep(1 * (attempt + 1))  # Exponential backoff
+                continue
+            raise
 
 def asin_exists_sage(asin: str) -> bool:
     with get_db() as db:
@@ -27,6 +38,7 @@ def fetch_product_sage_by_asin(asin: str = None) -> dict:
         return jsonable_encoder(query)
     
 def product_enhancements_exists(asin: str) -> bool:
+    
     with get_db() as db:
         return db.query(exists().where(ProductEnhancements.asin == asin)).scalar()
 

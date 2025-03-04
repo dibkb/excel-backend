@@ -6,7 +6,9 @@ from ..main import engine, SessionLocal
 from ...schemas.product import Product as ProductSchema
 import json
 from pydantic import BaseModel
-
+from typing import List
+from ...product_sage.improvement import ProductImprovementSchema
+from ...product_sage.sentiment import SentimentSchema
 
 def create_product(product_data, asin: str):
     db = SessionLocal()
@@ -69,19 +71,13 @@ def create_product_enhancements(json_data, asin: str):
         db.close()
 
 
-def create_product_sage(improvements,sentiments, asin: str):
+def create_product_sage(improvements:List[ProductImprovementSchema],sentiments:List[SentimentSchema], asin: str):
     db = SessionLocal()
     try:
-        if isinstance(improvements, BaseModel):
-            improvements = improvements.model_dump_json()
-        elif isinstance(improvements, str):
-            improvements = json.loads(improvements)
-
-        if isinstance(sentiments, BaseModel):
-            sentiments = sentiments.model_dump_json()
-        elif isinstance(sentiments, str):
-            sentiments = json.loads(sentiments)
-        query = insert(ProductSage).values(asin=asin,improvements=improvements,sentiments=sentiments)
+        improvements_list = [improvement.model_dump() for improvement in improvements]
+        sentiments_list = [sentiment.model_dump() for sentiment in sentiments]
+        
+        query = insert(ProductSage).values(asin=asin,improvements=improvements_list,sentiments=sentiments_list)
         db.execute(query)
         db.commit()
         return {
