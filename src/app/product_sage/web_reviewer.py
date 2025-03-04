@@ -1,13 +1,14 @@
+import concurrent.futures
 import os
-from typing import Dict
-from langchain_community.utilities import SerpAPIWrapper
+from typing import Dict, List
 import httpx
+from langchain_community.utilities import SerpAPIWrapper
 from langchain.prompts import PromptTemplate
 from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel
-from typing import List
+
 class TitleSchema(BaseModel):
     title: str
 
@@ -67,28 +68,48 @@ class WebReviewer:
         return self.refined_title
     
     def get_top_website_content(self) -> Dict:
-        """Returns content from the top search result website"""
         if not self.refined_title:
             self.refine_title()
 
-        results = self.search.results(self.refined_title + "review")
+        results = self.search.results(self.refined_title + " review")
         if not results.get("organic_results"):
             return {"error": "No results found"}
-        count = 0
-        for x in results["organic_results"]:
-        # discard amazon links as we  have products data 
-            if(x["link"].startswith(tuple(self.websites_to_skip))):
-                continue
-            else:
-                url = x.get("link")
-                review = self.website_reviewer.analyze_website(url)
-                self.reviews.append(ReviewSchema(source=url,review=review,favicon=x.get("favicon")))
-                count += 1
-                if count == 2:
-                    break
 
+        # Filter valid URLs first
+        valid_entries = []
+        for entry in results["organic_results"]:
+            if any(entry.get("link", "").startswith(site) for site in self.websites_to_skip):
+                continue
+            valid_entries.append(entry)
+            if len(valid_entries) == 2:
+                break
+
+        # Process valid entries in parallel
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            futures = {
+                executor.submit(self._process_single_website, entry)
+                for entry in valid_entries
+            }
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    review = future.result()
+                    self.reviews.append(review)
+                except Exception as e:
+                    # Handle or log exceptions as needed
+                    pass
 
         return self.reviews
+    
+    def _process_single_website(self, entry: dict) -> ReviewSchema:
+        """Process a single website entry and return ReviewSchema"""
+        url = entry.get("link")
+        favicon = entry.get("favicon", "")
+        review = self.website_reviewer.analyze_website(url)
+        return ReviewSchema(
+            source=url,
+            review=review,
+            favicon=favicon
+        )
 
 
 
@@ -103,23 +124,28 @@ class WebsiteReviewer:
         content = response.text[:10000]
         
         prompt = PromptTemplate(
-        template="""
-        Analyze the following product or service based on the given evaluation criteria:
+            template="""
+            You are tasked with reviewing the following product or service based on its **core features and real-world performance**.
+            Your analysis should focus exclusively on the product itself, evaluating its quality, functionality, and overall value.
 
-        **Product/Service Description:**  
-        {content}
+            **Product/Service Description:**  
+            {content}
 
-        **Evaluation Criteria:**  
-        1. **Positive Aspects:** Identify key strengths such as quality, usability, uniqueness, value for money, and customer satisfaction.  
-        2. **Negative Aspects:** Highlight potential drawbacks, including usability issues, pricing concerns, durability, or missing features.  
-        3. **Suggested Improvements:** Provide actionable recommendations to enhance the product/service based on identified weaknesses.  
-        4. **Overall Assessment:** Give a concise summary, including a rating (out of 10) based on quality, user experience, and overall value.  
+            **Evaluation Criteria:**  
+            1. **Build Quality & Design:** Assess the durability, material quality, aesthetics, and ergonomics.
+            2. **Performance & Usability:** Evaluate efficiency, ease of use, reliability, and effectiveness in real-world scenarios.
+            3. **Features & Functionality:** Analyze the key features, unique selling points, and compare them with similar products.
+            4. **Value for Money:** Determine if the product justifies its price based on its features, longevity, and user experience.
+            5. **Pros & Cons:** Clearly outline the advantages and disadvantages based on the factors above.
+            6. **Final Verdict:** Provide a concise summary with a rating (out of 10) reflecting the overall performance and value.
 
-        **Output Format:**  
-        {format_instructions}
-        """,
-        input_variables=["content"],
-        partial_variables={"format_instructions": self.parser.get_format_instructions()}
+            **Output Format:**  
+            {format_instructions}
+
+            *Note: Ensure that your review strictly addresses the product or service itself, with no references to website design or online presentation.*
+            """,
+            input_variables=["content"],
+            partial_variables={"format_instructions": self.parser.get_format_instructions()}
         )
 
         formatted_prompt = prompt.format(content=content)

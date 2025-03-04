@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 
-from .product_sage.web_reviewer import WebReviewer
+from .product_sage.web_reviewer import ReviewSchema, WebReviewer
 
 from .product_sage.sentiment import SentimentSchema
 from .product_sage.improvement import ProductImprovementSchema
@@ -81,24 +81,26 @@ async def get_amazon_product_sage(asin: str)->Any:
         scraper = AmazonScraper(asin)
         product_detials = scraper.get_all_details()
 
-        # product_info: Specifications = product_detials.product.specifications
-        # reviews: List[str] = product_detials.product.reviews
+        product_info: Specifications = product_detials.product.specifications
+        reviews: List[str] = product_detials.product.reviews
     
 
-        # product_sage = ProductSage(product_info, reviews)
-        # sentiments = product_sage.get_analysis()
-        # improvements = product_sage.get_product_improvement()
+        product_sage = ProductSage(product_info, reviews)
+        sentiments = product_sage.get_analysis()
+        improvements = product_sage.get_product_improvement()
 
-        # response = create_product_sage(improvements,sentiments,asin)
+        response = create_product_sage(improvements,sentiments,asin)
 
-        # return response
-        title_refiner = WebReviewer(product_detials.product.title)
-        refined_title = title_refiner.get_top_website_content()
-        return refined_title
+        return response
     else:
         product = fetch_product_sage_by_asin(asin)
         return product
 
+@app.get("/amazon/product-sage/web-reviewer/{title}",response_model=List[ReviewSchema])
+async def get_amazon_product_sage_web_reviewer(title: str)->List[ReviewSchema]:
+    reviewer = WebReviewer(title)
+    reviews = reviewer.get_top_website_content()
+    return reviews
 
 @app.get("/amazon/competitors/{asin}")
 async def get_amazon_competitors(asin: str):
