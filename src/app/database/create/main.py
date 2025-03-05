@@ -1,7 +1,9 @@
 from datetime import datetime
+
+from ...product_sage.web_reviewer import ReviewSchema
 from ..init_db import get_db
 from sqlalchemy.dialects.postgresql import insert
-from ..models import Product, ProductEnhancements, ProductSage
+from ..models import Product, ProductEnhancements, ProductSage, ProductWebReviewer
 from ..main import engine, SessionLocal
 from ...schemas.product import Product as ProductSchema
 import json
@@ -76,7 +78,7 @@ def create_product_sage(improvements:List[ProductImprovementSchema],sentiments:L
     try:
         improvements_list = [improvement.model_dump() for improvement in improvements]
         sentiments_list = [sentiment.model_dump() for sentiment in sentiments]
-        
+
         query = insert(ProductSage).values(asin=asin,improvements=improvements_list,sentiments=sentiments_list)
         db.execute(query)
         db.commit()
@@ -84,6 +86,22 @@ def create_product_sage(improvements:List[ProductImprovementSchema],sentiments:L
             "improvements":improvements,
             "sentiments":sentiments
         }
+    except Exception as e:
+        db.rollback()
+        print(f"Error creating product: {e}")
+        raise
+    finally:
+        db.close()
+
+
+def create_product_web_reviewer(reviews:List[ReviewSchema], asin: str):
+    db = SessionLocal()
+    try:
+        reviews_list = [review.model_dump() for review in reviews]
+        query = insert(ProductWebReviewer).values(asin=asin,reviews=reviews_list)
+        db.execute(query)
+        db.commit()
+        return reviews  
     except Exception as e:
         db.rollback()
         print(f"Error creating product: {e}")

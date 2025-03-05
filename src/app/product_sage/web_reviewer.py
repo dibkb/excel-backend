@@ -67,7 +67,7 @@ class WebReviewer:
         self.refined_title = parser.parse(response.content).model_dump().get("title")
         return self.refined_title
     
-    def get_top_website_content(self) -> Dict:
+    def get_top_website_content(self) -> List[ReviewSchema]:
         if not self.refined_title:
             self.refine_title()
 

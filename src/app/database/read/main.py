@@ -1,5 +1,5 @@
 from ..init_db import get_db
-from ..models import Product, ProductEnhancements,ProductSage
+from ..models import Product, ProductEnhancements,ProductSage, ProductWebReviewer
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import exists
 from sqlalchemy.exc import OperationalError
@@ -48,3 +48,16 @@ def fetch_product_enhancements_by_asin(asin: str = None) -> dict:
         if asin:
             query = query.filter(ProductEnhancements.asin == asin).first()
         return jsonable_encoder(query)
+    
+
+def product_web_reviewer_exists(asin: str) -> bool:
+    with get_db() as db:
+        return db.query(exists().where(ProductWebReviewer.asin == asin)).scalar()
+
+def fetch_product_web_reviewer_by_asin(asin: str = None) -> dict:
+    with get_db() as db:
+        query = db.query(ProductWebReviewer)
+        if asin:
+            query = query.filter(ProductWebReviewer.asin == asin).first()
+        return jsonable_encoder(query)
+

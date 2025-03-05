@@ -5,8 +5,8 @@ from .product_sage.web_reviewer import ReviewSchema, WebReviewer
 from .product_sage.sentiment import SentimentSchema
 from .product_sage.improvement import ProductImprovementSchema
 import httpx
-from .database.read.main import asin_exists, asin_exists_sage, fetch_product_by_asin, fetch_product_enhancements_by_asin, fetch_product_sage_by_asin, product_enhancements_exists
-from .database.create.main import create_product, create_product_enhancements, create_product_sage
+from .database.read.main import asin_exists, asin_exists_sage, fetch_product_by_asin, fetch_product_enhancements_by_asin, fetch_product_sage_by_asin, fetch_product_web_reviewer_by_asin, product_enhancements_exists, product_web_reviewer_exists
+from .database.create.main import create_product, create_product_enhancements, create_product_sage, create_product_web_reviewer
 from .database.init_db import init_db
 
 from .schemas.api import ProductSageResponse
@@ -96,11 +96,16 @@ async def get_amazon_product_sage(asin: str)->Any:
         product = fetch_product_sage_by_asin(asin)
         return product
 
-@app.get("/amazon/product-sage/web-reviewer/{title}",response_model=List[ReviewSchema])
-async def get_amazon_product_sage_web_reviewer(title: str)->List[ReviewSchema]:
-    reviewer = WebReviewer(title)
-    reviews = reviewer.get_top_website_content()
-    return reviews
+@app.get("/amazon/product-sage/web-reviewer/{asin}", response_model=List[ReviewSchema])
+async def get_amazon_product_sage_web_reviewer(asin: str, title: str) -> List[ReviewSchema]:
+    if not product_web_reviewer_exists(asin):
+        reviewer = WebReviewer(title)
+        reviews = reviewer.get_top_website_content()
+        response = create_product_web_reviewer(reviews, asin)
+        return response
+    else:
+        reviews = fetch_product_web_reviewer_by_asin(asin)
+        return [ReviewSchema(**review) for review in reviews['reviews']]
 
 @app.get("/amazon/competitors/{asin}")
 async def get_amazon_competitors(asin: str):

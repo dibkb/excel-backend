@@ -26,3 +26,10 @@ class ProductEnhancements(Base):
     asin = Column(String(20), primary_key=True)
     enhancements = Column(JSON,nullable=True)
     created_at = Column(DateTime, default=datetime.now())
+
+
+class ProductWebReviewer(Base):
+    __tablename__ = 'product_web_reviewer'
+    asin = Column(String(20), primary_key=True)
+    reviews = Column(JSON,nullable=True)
+    created_at = Column(DateTime, default=datetime.now())
