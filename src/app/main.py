@@ -97,12 +97,19 @@ async def get_amazon_product_sage(asin: str)->Any:
         return product
 
 @app.get("/amazon/product-sage/web-reviewer/{asin}", response_model=List[ReviewSchema])
-async def get_amazon_product_sage_web_reviewer(asin: str, title: str) -> List[ReviewSchema]:
+async def get_amazon_product_sage_web_reviewer(asin: str) -> List[ReviewSchema]:
     if not product_web_reviewer_exists(asin):
-        reviewer = WebReviewer(title)
-        reviews = reviewer.get_top_website_content()
-        response = create_product_web_reviewer(reviews, asin)
-        return response
+        try:
+            scraper = AmazonScraper(asin)
+            product = scraper.get_all_details()
+            title = product.product.title
+            reviewer = WebReviewer(title)
+            reviews = reviewer.get_top_website_content()
+            response = create_product_web_reviewer(reviews, asin)
+            return response
+        except Exception as e:
+            print(f"Error getting product sage web reviewer: {e}")
+            return []
     else:
         reviews = fetch_product_web_reviewer_by_asin(asin)
         return [ReviewSchema(**review) for review in reviews['reviews']]
