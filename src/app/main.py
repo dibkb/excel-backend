@@ -1,5 +1,7 @@
 from typing import Any, Dict, List
 
+from src.app.swot.main import Swot, SwotAnalysisConsolidated
+
 from .product_sage.web_reviewer import ReviewSchema, WebReviewer
 
 from .product_sage.sentiment import SentimentSchema
@@ -17,6 +19,10 @@ from dibkb_scraper import AmazonScraper,AmazonProductResponse
 from .product_sage.main import ProductSage
 import socketio
 from .product_enhancer.enhance import ProductEnhancer
+import os
+import dotenv
+
+dotenv.load_dotenv()
 
 sio = socketio.AsyncServer(
     async_mode="asgi",
@@ -125,7 +131,7 @@ async def get_amazon_competitors(asin: str):
     if not product_enhancements_exists(asin):
         try:
             client = httpx.AsyncClient()
-            response = await client.get(f"http://localhost:8000/amazon/{asin}")
+            response = await client.get(f"{os.getenv('BACKEND_URL')}/amazon/{asin}")
             product = response.json()
             product_enhancer = ProductEnhancer(product)
             content = product_enhancer.generate_enhanced_listing()
@@ -145,3 +151,9 @@ async def get_amazon_competitors(asin: str):
     else:
         product = fetch_product_enhancements_by_asin(asin)
         return product
+
+@app.get("/amazon/swot-consolidated/{asin}",response_model=SwotAnalysisConsolidated)
+async def get_amazon_swot(asin: str,competitors: str):
+    competitors = [competitor.strip() for competitor in competitors.split(",")]
+    swot = Swot(asin,competitors)
+    return await swot.analyze()
