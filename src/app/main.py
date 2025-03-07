@@ -157,3 +157,4 @@ async def get_amazon_swot(asin: str,competitors: str):
     competitors = [competitor.strip() for competitor in competitors.split(",")]
     swot = Swot(asin,competitors)
     return await swot.analyze()
+

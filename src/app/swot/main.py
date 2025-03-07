@@ -27,26 +27,42 @@ class Swot:
         self.llm = ChatGroq(temperature=0.7, model="llama-3.3-70b-versatile")
         self.parser_consolidated = PydanticOutputParser(pydantic_object=SwotAnalysisConsolidated)
 
-    async def load_asin_info(self,asin:str):
+    async def load_asin_info(self, asin: str) -> Dict:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            try:
+                # Get basic product info
+                response = await client.get(f"{os.getenv('BACKEND_URL')}/amazon/{asin}")
+                response.raise_for_status()
+                product = response.json()
+                product_info = {
+                    "description": product["description"],
+                    "specifications": product["specifications"]
+                }
 
-        client = httpx.AsyncClient()
-        response = await client.get(f"{os.getenv('BACKEND_URL')}/amazon/{asin}")
-        product = response.json()
-        product_info = {
-            "description": product["description"],
-            "specifications": product["specifications"]
-        }
+                # Get product sage info
+                response = await client.get(f"{os.getenv('BACKEND_URL')}/amazon/product-sage/{asin}")
+                response.raise_for_status()
+                product_sage = response.json()
+                product_info["sentiments"] = product_sage["sentiments"]
+                product_info["improvements"] = product_sage["improvements"]
 
-        response = await client.get(f"{os.getenv('BACKEND_URL')}/amazon/product-sage/{asin}")
-        product_sage = response.json()
-        product_info["sentiments"] = product_sage["sentiments"]
-        product_info["improvements"] = product_sage["improvements"]
+                # Get web reviewer info
+                response = await client.get(f"{os.getenv('BACKEND_URL')}/amazon/product-sage/web-reviewer/{asin}")
+                response.raise_for_status()
+                product_web_reviewer = response.json()
+                product_info["web_reviewer"] = product_web_reviewer
 
-        response = await client.get(f"{os.getenv('BACKEND_URL')}/amazon/product-sage/web-reviewer/{asin}")
-        product_web_reviewer = response.json()
-        product_info["web_reviewer"] = product_web_reviewer
+                return product_info
 
-        return product_info
+            except httpx.TimeoutException:
+                print(f"Request timed out for ASIN: {asin}")
+                raise
+            except httpx.RequestError as e:
+                print(f"An error occurred while requesting data for ASIN {asin}: {e}")
+                raise
+            except Exception as e:
+                print(f"Unexpected error while processing ASIN {asin}: {e}")
+                raise
     
     def process_swot_components(self, data: Dict) -> Dict:
         """Extract SWOT components from structured data"""
@@ -123,12 +139,13 @@ class Swot:
         - Use comparative language ("X% faster than competitors")
         - Reference specific competitor capabilities
         - Maintain strict JSON validity (no comments, proper escaping)
+        - give a detailed description based on the heading
 
         Example Structure:
         "strengths": [
             {{
                 "heading": "Superior Read Performance",
-                "description": "15% faster read speeds compared to average competitor SSDs in same price tier"
+                "description": ""
             }}
         ]
         """
