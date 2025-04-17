@@ -68,7 +68,7 @@ async def disconnect(sid):
         
 @app.get("/health")
 async def health_check():
-    return {"status": "Healthy and running 🚀 💪"}
+    return {"status": "Healthy and running..."}
 
 @app.get("/amazon/{asin}",response_model=Dict[str,Any])
 async def get_amazon_product(asin: str)->Dict[str,Any]:
