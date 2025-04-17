@@ -186,14 +186,14 @@ tests-mypy = ["mypy (>=1.11.1)", "pytest-mypy-plugins"]
 
 [[package]]
 name = "beautifulsoup4"
-version = "4.13.3"
+version = "4.13.4"
 description = "Screen-scraping library"
 optional = false
 python-versions = ">=3.7.0"
 groups = ["main"]
 files = [
-    {file = "beautifulsoup4-4.13.3-py3-none-any.whl", hash = "sha256:99045d7d3f08f91f0d656bc9b7efbae189426cd913d830294a15eefa0ea4df16"},
-    {file = "beautifulsoup4-4.13.3.tar.gz", hash = "sha256:1bd32405dacc920b42b83ba01644747ed77456a65760e285fbc47633ceddaf8b"},
+    {file = "beautifulsoup4-4.13.4-py3-none-any.whl", hash = "sha256:9bbbb14bfde9d79f38b8cd5f8c7c85f4b8f2523190ebed90e950a8dea4cb1c4b"},
+    {file = "beautifulsoup4-4.13.4.tar.gz", hash = "sha256:dbb3c4e1ceae6aefebdaf2423247260cd062430a410e38c66f2baa50a8437195"},
 ]
 
 [package.dependencies]
@@ -475,19 +475,20 @@ typing-inspect = ">=0.4.0,<1"
 
 [[package]]
 name = "dibkb-scraper"
-version = "0.2.7"
+version = "0.2.9"
 description = "A scraper for Amazon product details and reviews using ASIN"
 optional = false
 python-versions = ">=3.6"
 groups = ["main"]
 files = [
-    {file = "dibkb_scraper-0.2.7-py3-none-any.whl", hash = "sha256:6fce52f6a7e652d117e5d440e1a6719bfee74a0bfc3a0af4c58e73f12b8324b6"},
-    {file = "dibkb_scraper-0.2.7.tar.gz", hash = "sha256:0791aeb95db1ef62de328f3fe0efca29d059a60929c3bbdd0040610ef17b2234"},
+    {file = "dibkb_scraper-0.2.9-py3-none-any.whl", hash = "sha256:00e759d8fda82ea4ad9d692191da1adf26f3a7b218a996b99e6ee48686a2b90c"},
+    {file = "dibkb_scraper-0.2.9.tar.gz", hash = "sha256:c7d4a78bdfaa07af77c1d1ba2a1f17fc02c871aa9e555846ff9a75f54107b17f"},
 ]
 
 [package.dependencies]
 beautifulsoup4 = "*"
 bs4 = "*"
+fake-useragent = "*"
 httpx = "*"
 pydantic = "*"
 
@@ -501,6 +502,18 @@ groups = ["main"]
 files = [
     {file = "distro-1.9.0-py3-none-any.whl", hash = "sha256:7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2"},
     {file = "distro-1.9.0.tar.gz", hash = "sha256:2fa77c6fd8940f116ee1d6b94a2f90b13b5ea8d019b98bc8bafdcabcdd9bdbed"},
+]
+
+[[package]]
+name = "fake-useragent"
+version = "2.2.0"
+description = "Up-to-date simple useragent faker with real world database"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "fake_useragent-2.2.0-py3-none-any.whl", hash = "sha256:67f35ca4d847b0d298187443aaf020413746e56acd985a611908c73dba2daa24"},
+    {file = "fake_useragent-2.2.0.tar.gz", hash = "sha256:4e6ab6571e40cc086d788523cf9e018f618d07f9050f822ff409a4dfe17c16b2"},
 ]
 
 [[package]]
@@ -2675,4 +2688,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0.0"
-content-hash = "1391926135e59c165484c4b4eb2a0d68ecbe1fd7ee2652cb00bb61206a8a8215"
+content-hash = "fe872a45b323d6b67c5ccadd08082baa86b98957ce957a865b3987a226b2a8b0"
