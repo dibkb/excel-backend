@@ -53,4 +53,4 @@ deploy:
         docker image prune -af --filter 'until=48h' 
       "
   only:
-    - main
+    - master
