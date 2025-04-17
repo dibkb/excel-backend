@@ -20,8 +20,8 @@ build_image:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
 
   script:
-    - docker buildx build --platform linux/amd64 -t $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG .
-    - docker push $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+    - docker buildx build --platform linux/amd64 -t $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:amd64 .
+    - docker push $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:amd64
   only:
     - main
 
@@ -42,15 +42,17 @@ deploy:
     - |
       ssh -T -i ~/.ssh/test.pem ${AWS_EC2_HOST} "
 
-        docker rmi $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG || true
-        docker pull $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+        sudo docker rmi $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:amd64 || true
+        sudo docker pull $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:amd64
 
-        docker stop $CI_REGISTRY_IMAGE || true
-        docker rm -f $CI_REGISTRY_IMAGE || true
+        sudo docker stop $CI_REGISTRY_IMAGE || true
+        sudo docker rm -f $CI_REGISTRY_IMAGE || true
 
-        docker compose -f docker-compose.yml up -d
+        cd app
 
-        docker image prune -af --filter 'until=48h' 
+        sudo docker compose -f docker-compose.yml up -d
+
+        sudo docker image prune -af --filter 'until=48h' 
       "
   only:
     - master
