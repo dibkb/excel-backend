@@ -1,12 +1,11 @@
 import json
 from typing import Dict, Any
-from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 from .web_search import TopWebsiteSearch
-
+from ...config.llm import AIModels
 class ProductEnhancer:
     def __init__(self,product_data: Dict[str, Any]):
-        self.llm = ChatGroq(temperature=0.7, model="llama-3.3-70b-versatile")
+        self.llm = AIModels().llama_4_mavrick()
         self.web_search = TopWebsiteSearch(product_data['title'])
         self.title = product_data['title']
         self.highlights = product_data['description']['highlights']
@@ -18,28 +17,28 @@ class ProductEnhancer:
         web_info = self.web_search.get_top_website_content()
         
         prompt = f"""
-        You are a professional Amazon listing optimizer. Your task is to enhance an existing product listing by integrating original product data with relevant web research insights. Your objective is to improve clarity, detail, and keyword optimization while ensuring technical accuracy. Please follow these guidelines:
+        You are a professional Amazon listing optimizer tasked with enhancing product listings.
 
-        1. **Technical Information:** Enhance the content by incorporating essential keywords, ensuring the total text remains under 200 characters.
-        2. **Highlights:** Generate a detailed yet concise list of selling points formatted as an array of strings.
-        3. **Additional Information:** Present comprehensive and concise key-value pairs. You may use existing details, add new key-value pairs, or remove those that do not enhance the listing.
-        4. **Technical Specifications:** Refine clarity using key-value pairs. Similarly, you can retain, add, or remove key-value pairs as you deem fit to improve the section.
+        IMPORTANT: Your response MUST be ONLY valid JSON with NO explanations, thoughts, or markdown.
 
-        **Input Data:**
+        Enhance the following product listing by incorporating original product data with web research:
 
-        - **Original Product Data:**
+        **Original Product Data:**
         - Title: `{self.title}`
         - Highlights: `{self.highlights}`
         - Technical: `{self.technical}`
         - Additional: `{self.additional}`
 
-        - **Web Research Information:**
+        **Web Research Information:**
         - `{web_info}`
 
-        **Output Requirements:**
+        Guidelines:
+        1. Enhance the title with essential keywords (under 200 characters)
+        2. Generate detailed highlights as an array of strings
+        3. Improve additional information as key-value pairs
+        4. Refine technical specifications as key-value pairs
 
-        Return ONLY valid JSON that strictly adheres to the structure below, with all fields enhanced accordingly:
-
+        Return ONLY this JSON structure with no explanations or markdown:
         {{
             "title": "Enhanced Product Title",
             "highlights": [
@@ -57,25 +56,33 @@ class ProductEnhancer:
             }},
             "source": "{web_info['source'] if isinstance(web_info, dict) and 'source' in web_info else ''}"
         }}
+        Respond only with valid JSON. Do not write an introduction or summary.
         """
 
         messages = [
-            SystemMessage(content="You are a expert e-commerce product listing optimizer."),
+            SystemMessage(content="You are an e-commerce product listing optimizer. Return ONLY valid JSON with no explanations."),
             HumanMessage(content=prompt)
         ]
         
         response = self.llm.invoke(messages)
+
+        print("llm content",response.content)
         
         # Clean and parse the response
         try:
             content = response.content
-            # Remove markdown code block markers if present
-            if content.startswith('```json'):
-                content = content.replace('```json\n', '', 1)
-                content = content.replace('\n```', '', 1)
-            elif content.startswith('```'):
-                content = content.replace('```\n', '', 1)
-                content = content.replace('\n```', '', 1)
+            
+            # Remove any markdown code block markers
+            if '```json' in content:
+                content = content.split('```json')[1].split('```')[0].strip()
+            elif '```' in content:
+                content = content.split('```')[1].split('```')[0].strip()
+                
+            # Find and extract just the JSON part if there's explanation text
+            if '{' in content and '}' in content:
+                start_idx = content.find('{')
+                end_idx = content.rfind('}') + 1
+                content = content[start_idx:end_idx]
                 
             return json.loads(content)
             

@@ -8,7 +8,7 @@ from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel
-
+from ...config.llm import AIModels
 class TitleSchema(BaseModel):
     title: str
 
@@ -27,7 +27,7 @@ class ReviewSchema(BaseModel):
 class WebReviewer:
     def __init__(self, title: str):
         self.title = title
-        self.llm = ChatGroq(temperature=0.7, model="gemma2-9b-it")
+        self.llm = AIModels().llama_4_mavrick()
         self.search = SerpAPIWrapper(serpapi_api_key=os.getenv("SERP_API_KEY"))
         self.refined_title = None
         self.website_reviewer = WebsiteReviewer()
@@ -54,7 +54,10 @@ class WebReviewer:
             -> Samsung Galaxy S25 Ultra 5G AI Smartphone
 
             Text to refine: {title}
-            {format_instructions}""",
+            {format_instructions}
+            Respond only with valid JSON. Do not write an introduction or summary.
+            """,
+            
             input_variables=["title"],
             partial_variables={"format_instructions": parser.get_format_instructions()}
         )
@@ -116,12 +119,12 @@ class WebReviewer:
 class WebsiteReviewer:
     def __init__(self):
         self.url = None
-        self.llm = ChatGroq(temperature=0.7, model="deepseek-r1-distill-qwen-32b")
+        self.llm = AIModels().llama_4_mavrick()
         self.parser = PydanticOutputParser(pydantic_object=WebsiteReviewSchema)
 
     def analyze_website(self, url: str) -> WebsiteReviewSchema:
         response = httpx.get(f"https://r.jina.ai/{url}", timeout=10)
-        content = response.text[:10000]
+        content = response.text[:30000]
         
         prompt = PromptTemplate(
             template="""
@@ -143,6 +146,8 @@ class WebsiteReviewer:
             {format_instructions}
 
             *Note: Ensure that your review strictly addresses the product or service itself, with no references to website design or online presentation.*
+
+            Respond only with valid JSON. Do not write an introduction or summary.
             """,
             input_variables=["content"],
             partial_variables={"format_instructions": self.parser.get_format_instructions()}
