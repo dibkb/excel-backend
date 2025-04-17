@@ -1,0 +1,35 @@
+FROM --platform=linux/amd64 python:3.11-bookworm
+
+WORKDIR /app
+
+# Install sudo
+RUN apt-get update && \
+    apt-get install -y sudo && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create a user with sudo privileges
+RUN useradd -m docker && echo "docker:docker" | chpasswd && \
+    adduser docker sudo && \
+    echo "docker ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Install poetry
+RUN pip install poetry
+
+# Copy poetry files
+COPY pyproject.toml poetry.lock* ./
+
+# Configure poetry to not create a virtual environment
+RUN poetry config virtualenvs.create false
+
+# Install dependencies
+RUN poetry install --no-root
+
+# Copy application code
+COPY . .
+
+# Expose port
+EXPOSE 8000
+
+# Run the application
+CMD ["poetry", "run", "dev"] 

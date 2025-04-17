@@ -26,7 +26,7 @@ dotenv.load_dotenv()
 
 sio = socketio.AsyncServer(
     async_mode="asgi",
-    cors_allowed_origins=["http://localhost:3001", "http://localhost:3000", "http://localhost:5173"],
+    cors_allowed_origins=["http://localhost:3001", "http://localhost:3000", "http://localhost:5173","https://excel.borborah.xyz"],
     logger=True,
     engineio_logger=True
 )
@@ -40,7 +40,7 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3001", "http://localhost:3000", "http://localhost:5173"],
+    allow_origins=["http://localhost:3001", "http://localhost:3000", "http://localhost:5173","https://excel.borborah.xyz"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
