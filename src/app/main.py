@@ -21,7 +21,7 @@ import socketio
 from .product_enhancer.enhance import ProductEnhancer
 import os
 import dotenv
-
+from ..config.main import settings
 dotenv.load_dotenv()
 
 sio = socketio.AsyncServer(
@@ -84,20 +84,27 @@ async def get_amazon_product(asin: str)->Dict[str,Any]:
 @app.get("/amazon/product-sage/{asin}",response_model=Any)
 async def get_amazon_product_sage(asin: str)->Any:
     if not asin_exists_sage(asin):
-        scraper = AmazonScraper(asin)
-        product_detials = scraper.get_all_details()
+        try:
+            client = httpx.AsyncClient()
+            response = await client.get(f"{settings.BACKEND_URL}/amazon/{asin}")
+            product_detials = response.json()
 
-        product_info: Specifications = product_detials.product.specifications
-        reviews: List[str] = product_detials.product.reviews
+            product_info: Specifications = product_detials['specifications']
+            reviews: List[str] = product_detials['reviews']
     
 
-        product_sage = ProductSage(product_info, reviews)
-        sentiments = product_sage.get_analysis()
-        improvements = product_sage.get_product_improvement()
+            product_sage = ProductSage(product_info, reviews)
+            sentiments = product_sage.get_analysis()
+            improvements = product_sage.get_product_improvement()
 
-        response = create_product_sage(improvements,sentiments,asin)
+            response = create_product_sage(improvements,sentiments,asin)
 
-        return response
+            return response
+
+        except Exception as e:
+            print(f"Error getting product sage: {e}")
+            return []
+
     else:
         product = fetch_product_sage_by_asin(asin)
         return product
@@ -106,9 +113,10 @@ async def get_amazon_product_sage(asin: str)->Any:
 async def get_amazon_product_sage_web_reviewer(asin: str) -> List[ReviewSchema]:
     if not product_web_reviewer_exists(asin):
         try:
-            scraper = AmazonScraper(asin)
-            product = scraper.get_all_details()
-            title = product.product.title
+            client = httpx.AsyncClient()
+            response = await client.get(f"{settings.BACKEND_URL}/amazon/{asin}")
+            product = response.json()
+            title = product['title']
             reviewer = WebReviewer(title)
             reviews = reviewer.get_top_website_content()
             response = create_product_web_reviewer(reviews, asin)
