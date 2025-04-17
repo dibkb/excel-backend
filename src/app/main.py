@@ -68,7 +68,10 @@ async def disconnect(sid):
         
 @app.get("/health")
 async def health_check():
-    return {"status": "Healthy and running from docker..."}
+    return {"status": "Healthy running 🚀"}
+@app.get("/latest-update")
+async def latest_update():
+    return {"status": "Scraper updated to version 0.2.9 (fake headers added)"}
 
 @app.get("/amazon/{asin}",response_model=Dict[str,Any])
 async def get_amazon_product(asin: str)->Dict[str,Any]:
