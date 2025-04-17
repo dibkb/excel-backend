@@ -23,7 +23,7 @@ build_image:
     - docker buildx build --platform linux/amd64 -t $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:amd64 .
     - docker push $CI_REGISTRY_USER/$CI_REGISTRY_IMAGE:amd64
   only:
-    - main
+    - master
 
 deploy:
   stage: deploy
