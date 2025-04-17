@@ -76,10 +76,14 @@ async def latest_update():
 @app.get("/amazon/{asin}",response_model=Dict[str,Any])
 async def get_amazon_product(asin: str)->Dict[str,Any]:
     if not asin_exists(asin):
-        scraper = AmazonScraper(asin)
-        product = scraper.get_all_details()
-        response = create_product(product.product,asin)
-        return response
+        try:
+            scraper = AmazonScraper(asin)
+            product = scraper.get_all_details()
+            response = create_product(product['product'],asin)
+            return response
+        except Exception as e:
+            print(f"Error getting product: {e}")
+            return {"error": "Failed to get product"}
     else:
         product = fetch_product_by_asin(asin)
         return product
