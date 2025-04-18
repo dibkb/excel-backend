@@ -8,7 +8,7 @@ import httpx
 from .database.read.main import asin_exists, asin_exists_sage, fetch_product_by_asin, fetch_product_enhancements_by_asin, fetch_product_sage_by_asin, fetch_product_web_reviewer_by_asin, product_enhancements_exists, product_web_reviewer_exists
 from .database.create.main import create_product, create_product_enhancements, create_product_sage, create_product_web_reviewer
 from .database.init_db import init_db
-
+from fastapi.responses import JSONResponse
 from .schemas.api import ProductSageResponse
 from .schemas.product_sage import Specifications
 from fastapi import FastAPI
@@ -96,7 +96,7 @@ async def get_amazon_product(asin: str)->Dict[str,Any]:
             return response
         except Exception as e:
             print(f"Error getting product: {e}")
-            return {"error": str(e)}
+            return JSONResponse(status_code=404, content={"message": str(e)})
     else:
         product = fetch_product_by_asin(asin)
         return product
