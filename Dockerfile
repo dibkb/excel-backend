@@ -13,6 +13,12 @@ RUN useradd -m docker && echo "docker:docker" | chpasswd && \
     adduser docker sudo && \
     echo "docker ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
+
+RUN pip install playwright
+
+RUN  playwright install-deps chromium
+
+RUN playwright install chromium
 # Install poetry
 RUN pip install poetry
 
