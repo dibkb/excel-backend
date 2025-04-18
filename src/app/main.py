@@ -3,9 +3,7 @@ from typing import Any, Dict, List
 from src.app.swot.main import Swot, SwotAnalysisConsolidated
 
 from .product_sage.web_reviewer import ReviewSchema, WebReviewer
-
-from .product_sage.sentiment import SentimentSchema
-from .product_sage.improvement import ProductImprovementSchema
+from bs4 import BeautifulSoup
 import httpx
 from .database.read.main import asin_exists, asin_exists_sage, fetch_product_by_asin, fetch_product_enhancements_by_asin, fetch_product_sage_by_asin, fetch_product_web_reviewer_by_asin, product_enhancements_exists, product_web_reviewer_exists
 from .database.create.main import create_product, create_product_enhancements, create_product_sage, create_product_web_reviewer
@@ -15,7 +13,9 @@ from .schemas.api import ProductSageResponse
 from .schemas.product_sage import Specifications
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dibkb_scraper import AmazonScraper,AmazonProductResponse
+from dibkb_scraper import AmazonScraper
+from dibkb_scraper.playwright import PlaywrightScraper
+
 from .product_sage.main import ProductSage
 import socketio
 from .product_enhancer.enhance import ProductEnhancer
@@ -53,6 +53,9 @@ sio_app = socketio.ASGIApp(sio, app)
 async def startup_db_client():
     try:
         init_db()
+        global chrome_scraper
+        chrome_scraper = PlaywrightScraper()
+        await chrome_scraper.initialize()
     except Exception as e:
         print(f"Failed to initialize database: {e}")
 
@@ -77,13 +80,23 @@ async def latest_update():
 async def get_amazon_product(asin: str)->Dict[str,Any]:
     if not asin_exists(asin):
         try:
-            scraper = AmazonScraper(asin)
+            html = await chrome_scraper.get_html_content(f"https://www.amazon.in/dp/{asin}")
+            soup = BeautifulSoup(html, "html.parser")
+            scraper = AmazonScraper(asin,soup)
             product = scraper.get_all_details()
-            response = create_product(product['product'],asin)
+            if product['product'] is None:
+                raise Exception("Product not found")
+            
+            result = product['product']
+            if result['title'] == None or result['title'] == "":
+                raise Exception("Product title not found")
+            if result['price'] == None or result['price'] == "":
+                raise Exception("Product price not found")
+            response = create_product(result,asin)
             return response
         except Exception as e:
             print(f"Error getting product: {e}")
-            return {"error": "Failed to get product"}
+            return {"error": str(e)}
     else:
         product = fetch_product_by_asin(asin)
         return product
@@ -96,7 +109,7 @@ async def get_amazon_product_sage(asin: str)->Any:
             response = await client.get(f"{settings.BACKEND_URL}/amazon/{asin}")
             product_detials = response.json()
 
-            product_info: Specifications = product_detials['specifications']
+            product_info = product_detials['specifications']
             reviews: List[str] = product_detials['reviews']
     
 
@@ -135,18 +148,13 @@ async def get_amazon_product_sage_web_reviewer(asin: str) -> List[ReviewSchema]:
         reviews = fetch_product_web_reviewer_by_asin(asin)
         return [ReviewSchema(**review) for review in reviews['reviews']]
 
-@app.get("/amazon/competitors/{asin}")
-async def get_amazon_competitors(asin: str):
-    scraper = AmazonScraper(asin)
-    competitors = scraper.get_competitors()
-    return competitors
 
 @app.get("/amazon/product-enhancements/{asin}")
 async def get_amazon_competitors(asin: str):
     if not product_enhancements_exists(asin):
         try:
             client = httpx.AsyncClient()
-            response = await client.get(f"{os.getenv('BACKEND_URL')}/amazon/{asin}")
+            response = await client.get(f"{settings.BACKEND_URL}/amazon/{asin}")
             product = response.json()
             product_enhancer = ProductEnhancer(product)
             content = product_enhancer.generate_enhanced_listing()

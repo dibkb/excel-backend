@@ -1,5 +1,4 @@
 import concurrent.futures
-import os
 from typing import Dict, List
 import httpx
 from langchain_community.utilities import SerpAPIWrapper
@@ -9,8 +8,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel
 from ...config.llm import AIModels
-class TitleSchema(BaseModel):
-    title: str
+from ...config.main import settings
 
 class WebsiteReviewSchema(BaseModel):
     positive_points: List[str]
@@ -23,12 +21,14 @@ class ReviewSchema(BaseModel):
     source: str
     review: WebsiteReviewSchema
     favicon: str
-
+class TitleSchema(BaseModel):
+    clean_title: str
 class WebReviewer:
     def __init__(self, title: str):
         self.title = title
+        self.parser = PydanticOutputParser(pydantic_object=TitleSchema)
         self.llm = AIModels().llama_4_mavrick()
-        self.search = SerpAPIWrapper(serpapi_api_key=os.getenv("SERP_API_KEY"))
+        self.search = SerpAPIWrapper(serpapi_api_key=settings.SERP_API_KEY)
         self.refined_title = None
         self.website_reviewer = WebsiteReviewer()
         self.websites_to_skip = ['https://www.amazon','https://www.reddit','https://www.youtube','https://www.instagram','https://www.tiktok','https://www.twitter','https://www.facebook','https://www.linkedin',]
@@ -37,7 +37,6 @@ class WebReviewer:
 
 
     def refine_title(self):
-        parser = PydanticOutputParser(pydantic_object=TitleSchema)
         prompt = PromptTemplate(
             template="""
             Input: [Full Product Description]
@@ -57,23 +56,26 @@ class WebReviewer:
             {format_instructions}
             Respond only with valid JSON. Do not write an introduction or summary.
             """,
-            
+            partial_variables={"format_instructions": self.parser.get_format_instructions()},
             input_variables=["title"],
-            partial_variables={"format_instructions": parser.get_format_instructions()}
         )
         formatted_prompt = prompt.format(title=self.title)
         messages = [
             SystemMessage(content="You are a helpful assistant that extracts clean product titles."),
             HumanMessage(content=formatted_prompt)
         ]
-        response = self.llm.invoke(messages)
-        self.refined_title = parser.parse(response.content).model_dump().get("title")
+        llm = self.llm | self.parser
+        response = llm.invoke(messages)
+        if hasattr(response, 'clean_title'):
+            self.refined_title = response.clean_title
+        else:
+            self.refined_title = self.title
+
         return self.refined_title
     
     def get_top_website_content(self) -> List[ReviewSchema]:
         if not self.refined_title:
             self.refine_title()
-
         results = self.search.results(self.refined_title + " review")
         if not results.get("organic_results"):
             return {"error": "No results found"}

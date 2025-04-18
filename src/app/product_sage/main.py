@@ -2,13 +2,13 @@ from typing import List
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from .translation import Translation
-from ..schemas.product_sage import Specifications
-from .improvement import ProductImprovement, ProductImprovementSchema
+from typing import Dict,Any
+from .improvement import ProductImprovement
 from .sentiment import SentimentAnalysis, SentimentSchema
 
 
 class ProductSage:
-    def __init__(self, product_info: Specifications, reviews: List[str]):
+    def __init__(self, product_info: Dict[str,Any], reviews: List[str]):
         self.product_improvement = ProductImprovement()
         self.translation = Translation()
         self.sentiment_analysis = SentimentAnalysis()

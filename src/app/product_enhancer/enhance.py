@@ -38,7 +38,6 @@ class ProductEnhancer:
         3. Improve additional information as key-value pairs
         4. Refine technical specifications as key-value pairs
 
-        Return ONLY this JSON structure with no explanations or markdown:
         {{
             "title": "Enhanced Product Title",
             "highlights": [
@@ -65,8 +64,6 @@ class ProductEnhancer:
         ]
         
         response = self.llm.invoke(messages)
-
-        print("llm content",response.content)
         
         # Clean and parse the response
         try:
