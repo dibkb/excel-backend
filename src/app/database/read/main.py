@@ -61,3 +61,42 @@ def fetch_product_web_reviewer_by_asin(asin: str = None) -> dict:
             query = query.filter(ProductWebReviewer.asin == asin).first()
         return jsonable_encoder(query)
 
+
+from fastapi.encoders import jsonable_encoder
+
+def fetch_all_products() -> list:
+    try:
+        with get_db() as db:
+            products = db.query(
+                Product.asin,
+                Product.title,
+                Product.price,
+                Product.image,
+            ).all()
+            
+            # Convert to list of dicts with safe handling of None values and types
+            product_list = []
+            for p in products:
+                image_value = None
+                if p.image:
+                    try:
+                        if isinstance(p.image, list) and len(p.image) > 0:
+                            image_value = p.image[0]
+                        else:
+                            image_value = p.image
+                    except (TypeError, IndexError):
+                        # Fallback if image processing fails
+                        image_value = p.image
+                
+                product_list.append({
+                    "asin": p.asin,
+                    "title": p.title,
+                    "price": p.price,
+                    "image": image_value
+                })
+            
+            return jsonable_encoder(product_list)
+    except Exception as e:
+        # Log the error or handle it as needed
+        print(f"Error fetching products: {str(e)}")
+        return []

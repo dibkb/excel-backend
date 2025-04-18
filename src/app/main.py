@@ -5,7 +5,7 @@ from src.app.swot.main import Swot, SwotAnalysisConsolidated
 from .product_sage.web_reviewer import ReviewSchema, WebReviewer
 from bs4 import BeautifulSoup
 import httpx
-from .database.read.main import asin_exists, asin_exists_sage, fetch_product_by_asin, fetch_product_enhancements_by_asin, fetch_product_sage_by_asin, fetch_product_web_reviewer_by_asin, product_enhancements_exists, product_web_reviewer_exists
+from .database.read.main import asin_exists, asin_exists_sage, fetch_product_by_asin, fetch_product_enhancements_by_asin, fetch_product_sage_by_asin, fetch_product_web_reviewer_by_asin, product_enhancements_exists, product_web_reviewer_exists, fetch_all_products
 from .database.create.main import create_product, create_product_enhancements, create_product_sage, create_product_web_reviewer
 from .database.init_db import init_db
 from fastapi.responses import JSONResponse
@@ -72,6 +72,16 @@ async def disconnect(sid):
 @app.get("/health")
 async def health_check():
     return {"status": "Healthy running 🚀"}
+
+@app.get("/products")
+async def get_products():
+    try:
+        products = fetch_all_products()
+        return products
+    except Exception as e:
+        print(f"Error getting products: {e}")
+        return []
+
 @app.get("/latest-update")
 async def latest_update():
     return {"status": "Scraper updated to version 0.2.9 (fake headers added)"}
